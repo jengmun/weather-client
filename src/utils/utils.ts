@@ -5,8 +5,9 @@ export const api = axios.create({
 });
 
 export interface WeatherData {
-  weather: { main: string; description: string }[];
-  main: { humidity: number; temp_min: number; temp_max: number };
+  id: number;
+  weather: { id: number; main: string }[];
+  main: { humidity: number; temp: number; temp_min: number; temp_max: number };
   sys: { country: string };
   timezone: number;
   name: string;
@@ -28,7 +29,6 @@ export const fetchWeather = async ({
     .then((res) => {
       return res.data;
     })
-
     .catch((err) => console.error(err));
 };
 
