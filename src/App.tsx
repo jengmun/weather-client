@@ -5,8 +5,16 @@ import { fetchWeather, getCoordinates, WeatherData } from "./utils/utils";
 function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [searchHistory, setSearchHistory] = useState<
-    { country: string; city: string; searchTime: number }[]
+    {
+      id: number;
+      country: string;
+      city: string;
+      lat: number;
+      lon: number;
+      searchTime: number;
+    }[]
   >([]);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
     const initialiseWeather = async () => {
@@ -36,6 +44,37 @@ function App() {
     initialiseWeather();
   }, []);
 
+  const updateWeather = async ({ lat, lon }: { lat: number; lon: number }) => {
+    const currentWeather: WeatherData = await fetchWeather({
+      lat: lat,
+      lon: lon,
+    });
+
+    if (currentWeather) {
+      setWeather(currentWeather);
+    }
+
+    setSearchHistory((prev) => {
+      return [
+        {
+          id: currentWeather.id,
+          country: currentWeather.sys.country,
+          city: currentWeather.name,
+          lat: lat,
+          lon: lon,
+          searchTime: new Date().valueOf(),
+        },
+        ...prev.filter(({ id }) => {
+          return id !== currentWeather.id;
+        }),
+      ];
+    });
+
+    if (errorMsg) {
+      setErrorMsg("");
+    }
+  };
+
   const onSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -44,16 +83,19 @@ function App() {
 
     if (!searchInput) {
       console.error("Please input city and country code");
+      setErrorMsg("Please input city and country code");
       return;
     }
     const searchCity = searchInput.split(",")?.[0]?.trim();
     if (!searchCity) {
       console.error("Please input city");
+      setErrorMsg("Please input city");
       return;
     }
     const searchCountry = searchInput.split(",")?.[1]?.trim();
     if (!searchCountry) {
       console.error("Please input country code");
+      setErrorMsg("Please input country code");
       return;
     }
     const results: {
@@ -65,29 +107,21 @@ function App() {
 
     if (!results.length) {
       console.error("City and Country are invalid");
+      setErrorMsg("City and Country are invalid");
       return;
     }
 
-    const currentWeather: WeatherData = await fetchWeather({
+    updateWeather({
       lat: results[0].lat,
       lon: results[0].lon,
     });
+  };
 
-    if (currentWeather) {
-      setWeather(currentWeather);
-    }
-
+  const onDelete = (selectedId: number) => {
     setSearchHistory((prev) => {
-      return [
-        {
-          country: searchCountry,
-          city: searchCity,
-          searchTime: new Date().valueOf(),
-        },
-        ...prev.filter(({ country, city }) => {
-          return country !== searchCountry && city !== searchCity;
-        }),
-      ];
+      return prev.filter(({ id }) => {
+        return selectedId !== id;
+      });
     });
   };
 
@@ -95,9 +129,12 @@ function App() {
     <div>
       Today's Weather
       <form onSubmit={onSearch}>
-        <input name="search" />
-        <button type="submit">Search</button>
+        <input name="search" placeholder="Singapore, SG" />
+        <button type="submit">
+          <img src="/search.png" alt="search" />
+        </button>
       </form>
+      {errorMsg}
       {weather && (
         <>
           {weather.name}, {weather.sys.country}
@@ -114,11 +151,19 @@ function App() {
           <div key={`${search.city}, ${search.country}`}>
             {search.city}, {search.country}
             {new Date(search.searchTime).toUTCString()}
-            <button>
+            <button
+              onClick={() => {
+                updateWeather({ lat: search.lat, lon: search.lon });
+              }}
+            >
               <img src="/search.png" alt="search" />
             </button>
-            <button>
-              <img src="/bin.png" alt="search" />
+            <button
+              onClick={() => {
+                onDelete(search.id);
+              }}
+            >
+              <img src="/bin.png" alt="delete" />
             </button>
           </div>
         );
@@ -128,13 +173,3 @@ function App() {
 }
 
 export default App;
-
-// Assumptions:
-// 1. Search based on city u are in
-// 2. Remove old search history if same city
-// 3. User allowed to select search results
-// 4. Use new api w geolocation rather than deprecated API
-
-// Todo:
-// Deployment
-// Cache
