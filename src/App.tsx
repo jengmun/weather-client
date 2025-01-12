@@ -2,6 +2,8 @@ import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { CircleAlert, Moon, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import cloud from "./assets/cloud.png";
+import sun from "./assets/sun.png";
 import CustomButton from "./components/ui/CustomButton";
 import {
   fetchWeather,
@@ -124,7 +126,7 @@ function App() {
 
   return (
     <div
-      className="bg-[url('/bg-light.png')] dark:bg-[url('/bg-dark.png')] min-h-screen flex flex-col items-center p-4 gap-2"
+      className="bg-[url('./assets/bg-light.png')] dark:bg-[url('./assets/bg-dark.png')] min-h-screen flex flex-col items-center p-4 gap-2"
       aria-label="Today's Weather"
     >
       <Toggle
@@ -182,14 +184,10 @@ function App() {
           <p className="text-secondary-foreground">Today's Weather</p>
           {/* 800: Clear Sky, 801: Few Clouds */}
           {weather?.weather[0].id === 800 || weather?.weather[0].id === 801 ? (
-            <img
-              src="/sun.png"
-              className="absolute w-52 top-0 right-0"
-              alt="sun"
-            />
+            <img src={sun} className="absolute w-52 top-0 right-0" alt="sun" />
           ) : (
             <img
-              src="/cloud.png"
+              src={cloud}
               className="absolute w-52 top-0 right-0"
               alt="cloud"
             />
