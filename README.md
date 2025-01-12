@@ -2,6 +2,9 @@
 
 This project is a weather application that allows users to search for the current weather in various cities and countries using the OpenWeather API. Users can also view their search history and switch between light and dark themes.
 
+
+This application is deployed at the following URL: [https://jengmun.github.io/weather-client](https://jengmun.github.io/weather-client/)
+
 ---
 
 ## Features
