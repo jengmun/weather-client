@@ -2,22 +2,19 @@ import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import { CircleAlert, Moon, Search, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { fetchWeather, getCoordinates, WeatherData } from "./utils/utils";
+import CustomButton from "./components/ui/CustomButton";
+import {
+  fetchWeather,
+  getCoordinates,
+  getCurrentLocation,
+  WeatherData,
+} from "./utils/utils";
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [searchInput, setSearchInput] = useState("");
-  const [searchHistory, setSearchHistory] = useState<
-    {
-      id: number;
-      country: string;
-      city: string;
-      lat: number;
-      lon: number;
-      searchTime: number;
-    }[]
-  >([]);
+  const [searchHistory, setSearchHistory] = useState<WeatherData[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
@@ -26,19 +23,7 @@ function App() {
 
   useEffect(() => {
     const initialiseWeather = async () => {
-      // Default to Singapore's coordinates
-      let lat = 1.3521;
-      let lon = 103.8198;
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          lat = position.coords.latitude;
-          lon = position.coords.longitude;
-        },
-        () => {
-          console.error("Unable to retrieve location");
-        }
-      );
+      const { lat, lon } = await getCurrentLocation();
 
       const currentWeather = await fetchWeather({
         lat,
@@ -61,35 +46,36 @@ function App() {
     }
   };
 
+  /**
+   * Update weather data based on latitude and longitude
+   */
   const updateWeather = async ({ lat, lon }: { lat: number; lon: number }) => {
-    const currentWeather: WeatherData = await fetchWeather({
+    const currentWeather = await fetchWeather({
       lat: lat,
       lon: lon,
     });
 
     if (currentWeather) {
       setWeather(currentWeather);
+
+      setSearchHistory((prev) => {
+        return [
+          currentWeather,
+          ...prev.filter(({ id }) => {
+            return id !== currentWeather.id;
+          }),
+        ];
+      });
+
+      handleClear();
+    } else {
+      setErrorMsg("The weather data for this location cannot be found");
     }
-
-    setSearchHistory((prev) => {
-      return [
-        {
-          id: currentWeather.id,
-          country: currentWeather.sys.country,
-          city: currentWeather.name,
-          lat: lat,
-          lon: lon,
-          searchTime: new Date().valueOf(),
-        },
-        ...prev.filter(({ id }) => {
-          return id !== currentWeather.id;
-        }),
-      ];
-    });
-
-    handleClear();
   };
 
+  /**
+   * Handle search form submission
+   */
   const onSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -125,6 +111,9 @@ function App() {
     });
   };
 
+  /**
+   * Delete item from search history
+   */
   const onDelete = (selectedId: number) => {
     setSearchHistory((prev) => {
       return prev.filter(({ id }) => {
@@ -165,7 +154,10 @@ function App() {
           </button>
         </form>
         {errorMsg && (
-          <div className="bg-destructive/90 w-fit p-2 rounded-lg flex gap-2">
+          <div
+            className="bg-destructive/90 w-fit p-2 rounded-lg flex gap-2"
+            aria-live="assertive"
+          >
             <CircleAlert color="white" />
             <p className="text-destructive-foreground">{errorMsg}</p>
           </div>
@@ -204,54 +196,60 @@ function App() {
 
               <div className="flex flex-row justify-between gap-4 grow">
                 <p>
-                  {new Date(
-                    new Date().valueOf() + weather.timezone
-                  ).toLocaleString()}
+                  {new Date(weather.dateTime + weather.timezone).toLocaleString(
+                    "en-SG"
+                  )}
                 </p>
                 <p>{weather.weather[0].main}</p>
                 <p>Humidity: {weather.main.humidity}%</p>
               </div>
             </>
           )}
+
           <div className="bg-background/30 dark:bg-background/30 rounded-3xl p-4 mt-4 flex flex-col gap-4">
             <p className="p-2 text-secondary-foreground">Search History</p>
             {searchHistory.map((search) => {
               return (
                 <div
-                  key={`${search.city}, ${search.country}`}
+                  key={`${search.name}, ${search.sys.country}`}
                   className="bg-background/40 dark:bg-background/50 text-secondary-foreground flex flex-row rounded-xl p-2 w-full items-center gap-2"
                 >
                   <div className="flex flex-col md:flex-row md:justify-between grow">
                     <p>
-                      {search.city}, {search.country}
+                      {search.name}, {search.sys.country}
                     </p>
-                    <p>{new Date(search.searchTime).toLocaleString()}</p>
+                    <p>
+                      {new Date(
+                        search.dateTime + search.timezone
+                      ).toLocaleString("en-SG")}
+                    </p>
                   </div>
                   <div className="flex flex-row gap-2">
-                    <button
+                    <CustomButton
                       onClick={() => {
-                        updateWeather({ lat: search.lat, lon: search.lon });
+                        updateWeather({
+                          lat: search.coord.lat,
+                          lon: search.coord.lon,
+                        });
                       }}
-                      className="bg-background dark:bg-transparent dark:border rounded-full p-2 w-10 h-10 flex justify-center items-center"
                       aria-label="Search"
                     >
                       <Search
                         aria-label="Search"
                         className="text-muted-foreground dark:text-primary-foreground"
                       />
-                    </button>
-                    <button
+                    </CustomButton>
+                    <CustomButton
                       onClick={() => {
                         onDelete(search.id);
                       }}
-                      className="bg-background dark:bg-transparent dark:border rounded-full p-2 w-10 h-10 flex justify-center items-center"
                       aria-label="Delete"
                     >
                       <Trash2
                         aria-label="Delete"
                         className="text-muted-foreground dark:text-primary-foreground"
                       />
-                    </button>
+                    </CustomButton>
                   </div>
                 </div>
               );
