@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
-import { CircleAlert, Moon, Search, Trash2 } from "lucide-react";
+import { CircleAlert, Moon, Search, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import CustomButton from "./components/ui/CustomButton";
 import {
@@ -140,22 +140,37 @@ function App() {
       {/* Breakpoint for sm size is 640px */}
       <div className="w-full md:min-w-[640px] md:w-2/5">
         <form onSubmit={onSearch} className="flex flex-row gap-2">
-          <Input
-            name="search"
-            placeholder="Enter City, Country Code (E.g. Singapore, SG)"
-            value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value);
-            }}
-            className="bg-secondary/20 text-secondary-foreground dark:bg-background/50 border-none h-10"
-          />
-          <button type="submit" className="rounded-xl bg-primary w-10 h-10 p-2">
-            <Search aria-label="Search" color="white" />
+          <div className="bg-secondary/20 dark:bg-background/50 border-none h-10 w-full flex items-center justify-between rounded">
+            <Input
+              name="search"
+              placeholder="Enter City, Country Code (E.g. Singapore, SG)"
+              value={searchInput}
+              onChange={(e) => {
+                setSearchInput(e.target.value);
+              }}
+              className="bg-transparent h-full px-4 pr-12 outline-none text-secondary-foreground dark:text-primary-foreground border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+              aria-label="Weather lookup"
+            />
+            <button
+              type="button"
+              onClick={handleClear}
+              aria-label="Clear input"
+              className="flex items-center justify-center w-8 h-8 text-secondary-foreground dark:text-primary-foreground"
+            >
+              <X className="w-5 h-5" color="white" />
+            </button>
+          </div>
+          <button
+            type="submit"
+            className="rounded-xl bg-primary w-10 h-10 p-2"
+            aria-label="Search"
+          >
+            <Search color="white" />
           </button>
         </form>
         {errorMsg && (
           <div
-            className="bg-destructive/90 w-fit p-2 rounded-lg flex gap-2"
+            className="bg-destructive/90 w-fit p-2 rounded-lg flex gap-2 mt-2"
             aria-live="assertive"
           >
             <CircleAlert color="white" />
@@ -234,10 +249,7 @@ function App() {
                       }}
                       aria-label="Search"
                     >
-                      <Search
-                        aria-label="Search"
-                        className="text-muted-foreground dark:text-primary-foreground"
-                      />
+                      <Search className="text-muted-foreground dark:text-primary-foreground" />
                     </CustomButton>
                     <CustomButton
                       onClick={() => {
@@ -245,10 +257,7 @@ function App() {
                       }}
                       aria-label="Delete"
                     >
-                      <Trash2
-                        aria-label="Delete"
-                        className="text-muted-foreground dark:text-primary-foreground"
-                      />
+                      <Trash2 className="text-muted-foreground dark:text-primary-foreground" />
                     </CustomButton>
                   </div>
                 </div>
